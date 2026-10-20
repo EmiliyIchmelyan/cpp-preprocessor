@@ -21,23 +21,23 @@ static const regex INCLUDE_ANGLE_REG(R"/(\s*#\s*include\s*<([^>]*)>\s*)/");
 // Рекурсивно обрабатывает файл: читает строки и подставляет include-ы.
 bool ProcessStream(istream& in, ostream& out, const path& in_file_path,
                    const vector<path>& include_directories) {
-    string line;
+    string line{};
     int line_number = 0;
-    smatch m;
+    smatch matches;
 
     while (getline(in, line)) {
         ++line_number;
 
-        const bool is_quote_include = regex_match(line, m, INCLUDE_QUOTE_REG);
+        const bool is_quote_include = regex_match(line, matches, INCLUDE_QUOTE_REG);
         const bool is_angle_include =
-            !is_quote_include && regex_match(line, m, INCLUDE_ANGLE_REG);
+            !is_quote_include && regex_match(line, matches, INCLUDE_ANGLE_REG);
 
         if (!is_quote_include && !is_angle_include) {
             out << line << '\n';
             continue;
         }
 
-        const string included_name = m[1].str();
+        const string included_name = matches[1].str();
         const path included_path(included_name);
 
         // Формируем список мест для поиска файла в порядке приоритета:
@@ -83,6 +83,9 @@ bool Preprocess(const path& in_file, const path& out_file,
     }
 
     ofstream out(out_file);
+    if (!out.is_open()) {
+        return false;
+    }
     return ProcessStream(in, out, in_file, include_directories);
 }
 
